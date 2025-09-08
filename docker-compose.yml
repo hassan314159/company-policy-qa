@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports: ["11434:11434"]
+    volumes: ["ollama_models:/root/.ollama"]
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:11434/api/tags >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    ports: ["6333:6333", "6334:6334"] # http/grpc
+    volumes: ["qdrant_storage:/qdrant/storage"]
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:6333/readyz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Server config
+      SERVER_PORT: "8080"
+
+      # Ollama config
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_PULL_STRATEGY: "when_missing"
+      CHAT_MODEL: "llama3.2:3b"
+      CHAT_TEMPERATURE: "0.2"
+      EMBED_MODEL: "nomic-embed-text"
+
+      # Qdrant config
+      QDRANT_HOST: "qdrant"
+      QDRANT_PORT: "6334"
+      QDRANT_TLS: "false"
+      QDRANT_API_KEY: ""   # optional, leave empty if not using auth
+      QDRANT_COLLECTION: "policy_chunks"
+      QDRANT_INIT_SCHEMA: "true"
+
+    ports: ["8080:8080"]
+    depends_on:
+      - ollama
+      - qdrant
+
+volumes:
+  qdrant_storage: {}
+  ollama_models: {}

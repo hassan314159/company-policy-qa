@@ -1,0 +1,29 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  threads:
+    virtual:
+      enabled: true   # nice with MVC for blocking I/O (PDF, DB)
+
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      init:
+        pull-model-strategy: ${OLLAMA_PULL_STRATEGY:when_missing}
+      chat:
+        options:
+          model: ${CHAT_MODEL:llama3.2:3b}
+          temperature: ${CHAT_TEMPERATURE:0.2}
+      embedding:
+        options:
+          model: ${EMBED_MODEL:nomic-embed-text}
+
+    vectorstore:
+      qdrant:
+        host: ${QDRANT_HOST:localhost}
+        port: ${QDRANT_PORT:6334}          # gRPC port
+        use-tls: ${QDRANT_TLS:false}
+        api-key: ${QDRANT_API_KEY:}        # optional; leave empty if none
+        collection-name: ${QDRANT_COLLECTION:policy_chunks}
+        initialize-schema: ${QDRANT_INIT_SCHEMA:true}  # auto-create collection
