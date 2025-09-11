@@ -6,6 +6,14 @@ services:
     restart: unless-stopped
     ports: ["11434:11434"]
     volumes: ["ollama_models:/root/.ollama"]
+    # Request GPU access (optional/best-effort on Docker Desktop/Compose)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
     healthcheck:
       test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:11434/api/tags >/dev/null"]
       interval: 10s
