@@ -5,6 +5,10 @@ spring:
   threads:
     virtual:
       enabled: true   # nice with MVC for blocking I/O (PDF, DB)
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
 
   ai:
     ollama:
