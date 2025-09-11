@@ -36,6 +36,7 @@ public class InferenceService {
                 citations.add(Map.of(
                         "n", i++,
                         "title", m.getOrDefault("file_name","Policy"),
+                        "page", m.getOrDefault("page_number",-1),
                         "snippet", truncate(d.getText(), 200)
                 ));
             }
@@ -45,6 +46,7 @@ public class InferenceService {
     }
 
     private static String truncate(String s, int n) {
+        s = s.replaceAll("\\s+"," ");
         return (s.length() <= n) ? s : s.substring(0, n - 1) + "…";
     }
 }
