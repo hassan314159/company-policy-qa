@@ -6,8 +6,10 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class InferenceService {
@@ -34,8 +36,32 @@ public class InferenceService {
         return Map.of("answer", resp.chatResponse().getResult().getOutput().getText(), "citations", citations);
     }
 
-    public Flux<String> answerStream(String question) {
-        return chatClient.prompt().user(question).stream().content();
+    public Flux<Map<String, Object>> answerStream(String question) {
+        AtomicReference<List<Document>> docsRef = new AtomicReference<>(null);
+
+        Flux<ChatClientResponse> base = chatClient
+                .prompt()
+                .user(question)
+                .stream()
+                .chatClientResponse()
+                .doOnNext(cr -> {
+                    if (docsRef.get() == null) {
+                        var docs = (List<Document>) cr.context().get(RetrievalAugmentationAdvisor.DOCUMENT_CONTEXT);
+                        if (docs != null) docsRef.compareAndSet(null, docs);
+                    }
+                })
+                .share();
+
+        Flux<Map<String,Object>> tokens = base
+                .map(cr -> cr.chatResponse().getResult().getOutput().getText())
+                .filter(s -> s != null && !s.isEmpty())
+                .map(s -> Map.of("type", "token", "data", s));
+
+        Mono<Map<String,Object>> citations = Mono.defer(() ->
+                Mono.just(Map.of("type", "citations",
+                        "data", toCitations(Optional.ofNullable(docsRef.get()).orElse(List.of())))));
+
+        return Flux.concat(tokens, citations);
     }
 
 

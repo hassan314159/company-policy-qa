@@ -33,9 +33,9 @@ public class InferenceController {
     @PostMapping(
             value = "/ask-stream",
             consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.TEXT_EVENT_STREAM_VALUE // <- NDJSON streaming
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE
     )
-    public Flux<String> askStream(@RequestBody AskRequest req) {
+    public Flux<Map<String, Object>> askStream(@RequestBody AskRequest req) {
         return service.answerStream(req.question());
     }
 
